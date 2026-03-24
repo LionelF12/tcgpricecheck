@@ -10,9 +10,11 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native'
+import { Platform } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import * as MediaLibrary from 'expo-media-library'
 import * as FileSystem from 'expo-file-system/legacy'
+import * as Linking from 'expo-linking'
 import type { CollectionItem, PriceSource, PriceType } from '@/lib/types'
 import { getExchangeRate } from '@/lib/edge-functions'
 import { Colors } from '@/constants/colors'
@@ -108,6 +110,12 @@ export function QuickFormatModal({ item, visible, onClose }: QuickFormatModalPro
     }
     setIsDownloading(true)
     try {
+      // Web: open the image URL in a new tab (MediaLibrary not available)
+      if (Platform.OS === 'web') {
+        await Linking.openURL(item.card_image)
+        return
+      }
+
       const { status } = await MediaLibrary.requestPermissionsAsync()
       if (status !== 'granted') {
         Alert.alert('Permission needed', 'Allow photo library access to save images.')

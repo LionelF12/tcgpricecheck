@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { supabase } from '@/lib/supabase'
+import { resultCache, collectionCache } from '@/lib/resultCache'
 import { useAuth } from '@/hooks/useAuth'
 import { useCollection } from '@/hooks/useCollection'
 import { CardMetadataCard } from '@/components/CardMetadataCard'
@@ -41,6 +42,27 @@ export default function ResultsScreen() {
   const loadResult = async () => {
     setIsLoading(true)
     try {
+      // Local (admin bypass) result — load from memory cache
+      if (searchId.startsWith('local_')) {
+        const cached = resultCache.get(searchId)
+        if (cached) setResult(cached)
+        return
+      }
+
+      // Admin bypass collection item — load from in-memory collectionCache
+      if (searchId.startsWith('col_local_')) {
+        const item = collectionCache.getAll().find((i) => i.id === searchId)
+        if (item) {
+          setResult({
+            id: searchId,
+            metadata: { ...item.metadata, imageUrl: item.card_image ?? item.metadata.imageUrl },
+            prices: item.price_snapshot ?? [],
+            fetchedAt: item.saved_at,
+          })
+        }
+        return
+      }
+
       if (searchId.startsWith('col_')) {
         // Load from collection table
         const collectionId = searchId.replace('col_', '')

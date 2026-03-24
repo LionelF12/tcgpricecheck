@@ -12,7 +12,7 @@ import {
   Image,
 } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
-import * as FileSystem from 'expo-file-system/legacy'
+import * as ImageManipulator from 'expo-image-manipulator'
 import { useRouter } from 'expo-router'
 import { SearchBar } from '@/components/SearchBar'
 import { CameraButton } from '@/components/CameraButton'
@@ -35,12 +35,21 @@ export default function SearchScreen() {
   const [searchState, setSearchState] = useState<SearchState>('idle')
   const [pendingMetadata, setPendingMetadata] = useState<CardMetadata | null>(null)
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const isLoading = searchState !== 'idle' && searchState !== 'confirming'
+
+  const showError = (msg: string) => {
+    console.error('[TCG Search]', msg)
+    setErrorMessage(msg)
+    setSearchState('idle')
+    setCapturedImageUri(null)
+  }
 
   // ─── TEXT SEARCH ───────────────────────────────────────────────
   const handleTextSearch = useCallback(async () => {
     if (!searchText.trim()) return
+    setErrorMessage(null)
     try {
       setSearchState('fetching_prices')
       const fakeMeta: CardMetadata = {
@@ -57,8 +66,7 @@ export default function SearchScreen() {
       }
       await runPricesAndSave(fakeMeta, null)
     } catch (err: any) {
-      Alert.alert('Search Error', err.message ?? 'Something went wrong.')
-      setSearchState('idle')
+      showError(err.message ?? 'Something went wrong.')
     }
   }, [searchText])
 
@@ -71,8 +79,7 @@ export default function SearchScreen() {
     }
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [3, 4],
+      allowsEditing: false,
       quality: 0.85,
       base64: true,
     })
@@ -90,8 +97,7 @@ export default function SearchScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [3, 4],
+      allowsEditing: false,
       quality: 0.85,
       base64: true,
     })
@@ -101,18 +107,20 @@ export default function SearchScreen() {
   }, [])
 
   // ─── IMAGE PROCESSING FLOW ─────────────────────────────────────
-  const processImage = async (uri: string, base64: string | null) => {
-    if (!base64) {
-      // Fallback: read as base64 from file system
-      const fileBase64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      })
-      base64 = fileBase64
-    }
+  const processImage = async (uri: string, _base64: string | null) => {
+    setErrorMessage(null)
     setCapturedImageUri(uri)
-
+    setSearchState('identifying')
     try {
-      setSearchState('identifying')
+      // Resize to max 1024px and convert to JPEG to keep payload under edge function limits
+      const manipulated = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1024 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      )
+      const base64 = manipulated.base64 ?? ''
+      if (!base64) throw new Error('Failed to encode image.')
+
       const metadata = await identifyCard(base64)
 
       if (metadata.gradingCompany === 'PSA' && metadata.slabId) {
@@ -126,9 +134,7 @@ export default function SearchScreen() {
         setSearchState('confirming')
       }
     } catch (err: any) {
-      Alert.alert('Identification Error', err.message ?? 'Could not identify card.')
-      setSearchState('idle')
-      setCapturedImageUri(null)
+      showError(err.message ?? 'Could not identify card.')
     }
   }
 
@@ -161,7 +167,7 @@ export default function SearchScreen() {
 
       router.push(`/results/${savedId}`)
     } catch (err: any) {
-      Alert.alert('Error', err.message ?? 'Failed to fetch prices.')
+      showError(err.message ?? 'Failed to fetch prices.')
     } finally {
       setSearchState('idle')
       setPendingMetadata(null)
@@ -203,6 +209,14 @@ export default function SearchScreen() {
           <CameraButton onPress={handleCamera} disabled={isLoading} />
           <UploadButton onPress={handleUpload} disabled={isLoading} />
         </View>
+
+        {/* Error banner */}
+        {errorMessage && (
+          <TouchableOpacity style={styles.errorBox} onPress={() => setErrorMessage(null)}>
+            <Text style={styles.errorText}>⚠ {errorMessage}</Text>
+            <Text style={styles.errorDismiss}>Tap to dismiss</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Loading state */}
         {isLoading && (
@@ -295,6 +309,16 @@ const styles = StyleSheet.create({
   dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
   dividerText: { fontSize: 13, color: Colors.textMuted },
   iconRow: { flexDirection: 'row', gap: 12 },
+  errorBox: {
+    backgroundColor: '#2D1515',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.error,
+    padding: 14,
+    gap: 4,
+  },
+  errorText: { fontSize: 14, color: Colors.error, fontWeight: '500' },
+  errorDismiss: { fontSize: 12, color: Colors.textMuted },
   loadingBox: {
     alignItems: 'center',
     gap: 12,

@@ -7,6 +7,7 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useAuth } from '@/hooks/useAuth'
@@ -19,14 +20,35 @@ import type { CollectionItem } from '@/lib/types'
 export default function CollectionScreen() {
   const router = useRouter()
   const { userId } = useAuth()
-  const { collection, isLoading, refetch } = useCollection(userId)
+  const { collection, isLoading, refetch, removeCard } = useCollection(userId)
   const [quickFormatItem, setQuickFormatItem] = useState<CollectionItem | null>(null)
 
+  const handleRemove = (item: CollectionItem) => {
+    Alert.alert(
+      'Remove Card',
+      `Remove "${item.metadata.name}" from your collection?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeCard(item.id)
+            } catch {
+              Alert.alert('Error', 'Could not remove card. Please try again.')
+            }
+          },
+        },
+      ]
+    )
+  }
+
   const handleRowPress = (item: CollectionItem) => {
-    // Navigate to results page using stored result data
-    // We use the collection item's id to fetch via supabase
-    // The results page can also accept collection items directly
-    router.push(`/results/col_${item.id}`)
+    // Admin bypass items already have ids like col_local_xxx — navigate directly.
+    // Real Supabase items use col_ prefix so the results page queries the DB.
+    const navId = item.id.startsWith('col_local_') ? item.id : `col_${item.id}`
+    router.push(`/results/${navId}`)
   }
 
   if (isLoading) {
@@ -76,6 +98,7 @@ export default function CollectionScreen() {
               item={item}
               onPress={() => handleRowPress(item)}
               onQuickFormat={() => setQuickFormatItem(item)}
+              onRemove={() => handleRemove(item)}
             />
           )}
         />

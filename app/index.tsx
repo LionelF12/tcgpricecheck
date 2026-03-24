@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useRouter } from 'expo-router'
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import {
   Platform,
   SafeAreaView,
 } from 'react-native'
+import { Image } from 'expo-image'
 import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
@@ -21,6 +23,7 @@ WebBrowser.maybeCompleteAuthSession()
 
 export default function LoginScreen() {
   const { signInAdmin } = useAuth()
+  const router = useRouter()
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [showAdminModal, setShowAdminModal] = useState(false)
   const [adminEmail, setAdminEmail] = useState('admin@test.com')
@@ -70,6 +73,7 @@ export default function LoginScreen() {
       Alert.alert('Invalid credentials', 'Check your admin email and password.')
     } else {
       setShowAdminModal(false)
+      router.replace('/(app)/search')
     }
   }
 
@@ -77,10 +81,11 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       {/* Logo / header area */}
       <View style={styles.heroSection}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoIcon}>🃏</Text>
-        </View>
-        <Text style={styles.title}>TCG Price Check</Text>
+        <Image
+          source={require('../logo/LogoSloganFinal.jpg')}
+          style={styles.logo}
+          contentFit="contain"
+        />
         <Text style={styles.subtitle}>
           Scan any Pokemon or Riftbound card and get{'\n'}real-time prices from Alt, eBay & Snkrdunk.
         </Text>
@@ -193,26 +198,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 16,
   },
-  logoBox: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logo: {
+    width: 280,
+    height: 140,
     marginBottom: 8,
-  },
-  logoIcon: {
-    fontSize: 48,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    letterSpacing: -0.5,
-    textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,

@@ -7,9 +7,10 @@ interface CollectionRowProps {
   item: CollectionItem
   onPress: () => void
   onQuickFormat: () => void
+  onRemove: () => void
 }
 
-export function CollectionRow({ item, onPress, onQuickFormat }: CollectionRowProps) {
+export function CollectionRow({ item, onPress, onQuickFormat, onRemove }: CollectionRowProps) {
   const meta = item.metadata
   const gradeLabel = meta.grade
     ? `${meta.gradingCompany ?? ''} ${meta.grade}`.trim()
@@ -50,15 +51,24 @@ export function CollectionRow({ item, onPress, onQuickFormat }: CollectionRowPro
         <Text style={styles.dateText}>Saved {savedDate}</Text>
       </View>
 
-      {/* Quick Format button */}
-      <TouchableOpacity
-        style={styles.quickFormatBtn}
-        onPress={onQuickFormat}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.quickFormatIcon}>📋</Text>
-        <Text style={styles.quickFormatText}>Format</Text>
-      </TouchableOpacity>
+      {/* Action buttons */}
+      <View style={styles.actionColumn}>
+        <TouchableOpacity
+          style={styles.quickFormatBtn}
+          onPress={onQuickFormat}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.quickFormatIcon}>📋</Text>
+          <Text style={styles.quickFormatText}>Format</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.removeBtn}
+          onPress={onRemove}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.removeIcon}>🗑</Text>
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   )
 }
@@ -125,12 +135,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.textMuted,
   },
+  actionColumn: {
+    gap: 6,
+    alignItems: 'center',
+  },
   quickFormatBtn: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 10,
     backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
@@ -144,5 +158,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.textSecondary,
     fontWeight: '500',
+  },
+  removeBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: Colors.error + '55',
+    minWidth: 60,
+  },
+  removeIcon: {
+    fontSize: 16,
   },
 })

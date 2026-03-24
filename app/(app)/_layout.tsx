@@ -4,7 +4,7 @@ import { Colors } from '@/constants/colors'
 
 function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
   return (
-    <View style={{ alignItems: 'center', gap: 2 }}>
+    <View style={{ alignItems: 'center', gap: 2, minWidth: 72 }}>
       <Text style={{ fontSize: 22 }}>{emoji}</Text>
       <Text
         style={{
@@ -12,6 +12,7 @@ function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focu
           fontWeight: '600',
           color: focused ? Colors.primary : Colors.textMuted,
         }}
+        numberOfLines={1}
       >
         {label}
       </Text>

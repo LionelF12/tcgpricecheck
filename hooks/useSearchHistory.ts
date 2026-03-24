@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { resultCache } from '@/lib/resultCache'
 import type { SearchHistoryItem, CardResult } from '@/lib/types'
+
+const ADMIN_USER_ID = 'admin-bypass-user'
 
 const SEVEN_DAYS_AGO = () => {
   const d = new Date()
@@ -33,6 +36,14 @@ export function useSearchHistory(userId: string | null) {
   const addSearch = useCallback(
     async (cardName: string, cardImage: string | null, result: CardResult): Promise<string> => {
       if (!userId) return ''
+
+      // Admin bypass: skip DB, store in memory cache
+      if (userId === ADMIN_USER_ID) {
+        const localId = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+        resultCache.set(localId, { ...result, id: localId })
+        return localId
+      }
+
       const { data, error } = await supabase
         .from('mobile_search_history')
         .insert({
