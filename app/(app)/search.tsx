@@ -153,7 +153,7 @@ export default function SearchScreen() {
   const runPricesAndSave = async (metadata: CardMetadata, imageUri: string | null) => {
     try {
       setSearchState('fetching_prices')
-      const prices = await getPrices(metadata.name, metadata.set, metadata.grade)
+      const prices = await getPrices(metadata.name, metadata.set, metadata.grade, metadata.gradingCompany)
 
       const result: CardResult = {
         id: '',

@@ -24,10 +24,11 @@ export async function identifyCard(base64Image: string): Promise<CardMetadata> {
 export async function getPrices(
   cardName: string,
   set: string,
-  grade: string | null
+  grade: string | null,
+  gradingCompany: string | null = null
 ): Promise<SourcePrices[]> {
   const { data, error } = await supabase.functions.invoke('get-prices', {
-    body: { cardName, set, grade },
+    body: { cardName, set, grade, gradingCompany },
   })
   if (error) throw await getFnError('get-prices', error)
   return data as SourcePrices[]
