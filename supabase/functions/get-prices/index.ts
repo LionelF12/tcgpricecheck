@@ -201,7 +201,7 @@ async function fetchAltPrices(
 //
 // Requires a free CardLadder account at https://app.cardladder.com
 
-const CL_FIREBASE_API_KEY = 'AIzaSyBqbxgaaGlpeb1F6HRvEW319OcuCsbkAHM'
+const CL_FIREBASE_API_KEY = 'AIzaSyBqbxgaaGlpeb1F6HRvEW319OcuCsbkAHMZZ123123'
 const CL_SEARCH_BASE = 'https://search-zzvl7ri3bq-uc.a.run.app'
 
 async function getCardLadderToken(): Promise<string | null> {
