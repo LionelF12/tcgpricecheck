@@ -26,7 +26,8 @@ interface QuickFormatModalProps {
 }
 
 const SOURCES: { key: PriceSource; label: string }[] = [
-  { key: 'alt', label: 'ALT' },
+  { key: 'cardladder', label: 'CardLadder' },
+  { key: 'alt', label: 'ALT FMV' },
   { key: 'ebay', label: 'eBay' },
   { key: 'snkrdunk', label: 'Snkrdunk' },
 ]
@@ -39,7 +40,7 @@ const PRICE_TYPES: { key: PriceType; label: string }[] = [
 ]
 
 export function QuickFormatModal({ item, visible, onClose }: QuickFormatModalProps) {
-  const [selectedSource, setSelectedSource] = useState<PriceSource>('ebay')
+  const [selectedSource, setSelectedSource] = useState<PriceSource>('cardladder')
   const [selectedPriceType, setSelectedPriceType] = useState<PriceType>('lastSold')
   const [manualPrice, setManualPrice] = useState('')
   const [exchangeRate, setExchangeRate] = useState(1.35)

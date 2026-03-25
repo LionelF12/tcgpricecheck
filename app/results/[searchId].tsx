@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { CardMetadataCard } from '@/components/CardMetadataCard'
 import { PriceChart } from '@/components/PriceChart'
 import { PriceTable } from '@/components/PriceTable'
 import { Colors } from '@/constants/colors'
-import type { CardResult } from '@/lib/types'
+import type { CardResult, AltCandidate } from '@/lib/types'
 
 export default function ResultsScreen() {
   const { searchId } = useLocalSearchParams<{ searchId: string }>()
@@ -29,6 +29,7 @@ export default function ResultsScreen() {
   const [result, setResult] = useState<CardResult | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [selectedAltIndex, setSelectedAltIndex] = useState(0)
 
   const isSaved = collection.some(
     (item) => item.metadata.name === result?.metadata.name
@@ -38,6 +39,11 @@ export default function ResultsScreen() {
     if (!searchId) return
     loadResult()
   }, [searchId])
+
+  // Reset candidate selection when result changes
+  useEffect(() => {
+    setSelectedAltIndex(0)
+  }, [result?.id])
 
   const loadResult = async () => {
     setIsLoading(true)
@@ -118,6 +124,32 @@ export default function ResultsScreen() {
     }
   }
 
+  // Extract Alt candidates from the stored prices
+  const altCandidates = useMemo<AltCandidate[]>(() => {
+    if (!result) return []
+    const altSource = result.prices.find(p => p.source === 'alt')
+    return (altSource?.altCandidates ?? []) as AltCandidate[]
+  }, [result])
+
+  // Build display prices: swap the alt entry with the selected candidate's data
+  const displayPrices = useMemo(() => {
+    if (!result) return []
+    return result.prices.map(p => {
+      if (p.source === 'alt' && altCandidates.length > 0) {
+        const c = altCandidates[selectedAltIndex] ?? altCandidates[0]
+        return {
+          ...p,
+          lastSold: c.lastSold,
+          avg3Sales: c.avg3Sales,
+          avg5Sales: c.avg5Sales,
+          highest5Sales: c.highest5Sales,
+          history: c.history,
+        }
+      }
+      return p
+    })
+  }, [result, altCandidates, selectedAltIndex])
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -166,14 +198,42 @@ export default function ResultsScreen() {
           isSaved={isSaved}
         />
 
+        {/* Alt candidate selector */}
+        {altCandidates.length > 0 && (
+          <View style={styles.candidatesSection}>
+            <Text style={styles.sectionLabel}>Alt Listing Source</Text>
+            {altCandidates.map((candidate, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.candidateRow,
+                  index === selectedAltIndex && styles.candidateRowActive,
+                ]}
+                onPress={() => setSelectedAltIndex(index)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.candidateRadio}>
+                  {index === selectedAltIndex && <View style={styles.candidateRadioDot} />}
+                </View>
+                <Text style={styles.candidateName} numberOfLines={2}>
+                  {candidate.name}
+                </Text>
+                <View style={styles.confidenceBadge}>
+                  <Text style={styles.confidenceText}>★ {candidate.confidenceScore}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* Price history chart */}
-        {result.prices.length > 0 && (
-          <PriceChart prices={result.prices} />
+        {displayPrices.length > 0 && (
+          <PriceChart prices={displayPrices} />
         )}
 
         {/* Price comparison table */}
-        {result.prices.length > 0 && (
-          <PriceTable prices={result.prices} />
+        {displayPrices.length > 0 && (
+          <PriceTable prices={displayPrices} />
         )}
 
         {/* Fetched timestamp */}
@@ -239,5 +299,70 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.textMuted,
     textAlign: 'center',
+  },
+  // Alt candidate selector
+  candidatesSection: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 14,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  candidateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  candidateRowActive: {
+    backgroundColor: Colors.alt + '18',
+    borderColor: Colors.alt + '60',
+  },
+  candidateRadio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: Colors.alt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  candidateRadioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.alt,
+  },
+  candidateName: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textPrimary,
+    lineHeight: 18,
+  },
+  confidenceBadge: {
+    backgroundColor: Colors.surfaceElevated,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  confidenceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.secondary,
   },
 })

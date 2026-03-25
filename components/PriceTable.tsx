@@ -7,15 +7,17 @@ interface PriceTableProps {
 }
 
 const SOURCE_LABELS: Record<string, string> = {
-  alt: 'ALT',
+  alt: 'ALT FMV',
   ebay: 'eBay',
   snkrdunk: 'Snkrdunk',
+  cardladder: 'CardLadder',
 }
 
 const SOURCE_COLORS: Record<string, string> = {
   alt: Colors.alt,
   ebay: Colors.ebay,
   snkrdunk: Colors.snkrdunk,
+  cardladder: Colors.cardladder,
 }
 
 function fmt(value: number | null): string {

@@ -1,6 +1,6 @@
 export type CardCategory = 'pokemon' | 'riftbound'
 export type GradingCompany = 'PSA' | 'BGS' | 'CGC' | 'RAW'
-export type PriceSource = 'alt' | 'ebay' | 'snkrdunk'
+export type PriceSource = 'alt' | 'ebay' | 'snkrdunk' | 'cardladder'
 export type PriceType = 'lastSold' | 'avg3Sales' | 'avg5Sales' | 'highest5Sales' | 'manual'
 
 export interface CardMetadata {
@@ -21,6 +21,20 @@ export interface PricePoint {
   price: number  // USD
 }
 
+export interface AltCandidate {
+  name: string
+  gradeKey: string
+  fmv: number
+  low: number
+  high: number
+  confidenceScore: number
+  lastSold: number        // = current Alt FMV (not an actual transaction)
+  avg3Sales: number | null
+  avg5Sales: number | null
+  highest5Sales: number   // = Alt FMV upper bound
+  history: PricePoint[]   // empty — Alt's public API has no historical sales
+}
+
 export interface SourcePrices {
   source: PriceSource
   lastSold: number | null
@@ -28,6 +42,7 @@ export interface SourcePrices {
   avg5Sales: number | null
   highest5Sales: number | null
   history: PricePoint[]   // up to 12 months of data points
+  altCandidates?: AltCandidate[]  // top 5 Alt hits by confidence (alt source only)
 }
 
 export interface CardResult {

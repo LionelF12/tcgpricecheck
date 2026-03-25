@@ -13,6 +13,7 @@ const SOURCE_COLORS: Record<string, string> = {
   alt: Colors.alt,
   ebay: Colors.ebay,
   snkrdunk: Colors.snkrdunk,
+  cardladder: Colors.cardladder,
 }
 
 interface PriceChartProps {
@@ -34,28 +35,50 @@ export function PriceChart({ prices }: PriceChartProps) {
 
   const ranges: TimeRange[] = ['3M', '6M', '12M']
 
-  // Use eBay data as the primary chart line (most widely recognised)
-  // Show all three sources if data is available
-  const chartSource = prices.find((p) => p.source === 'ebay') ?? prices[0]
-  if (!chartSource) return null
+  // Only show sources that have actual history data
+  const sourcesWithHistory = prices.filter(p => p.history.length >= 2)
 
-  const filtered = filterByRange(chartSource.history, range)
-  if (filtered.length < 2) return null
+  if (sourcesWithHistory.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Price History</Text>
+        <Text style={styles.emptyText}>
+          No sales history available yet.{'\n'}
+          Will populate once CardLadder credentials are configured or eBay API is connected.
+        </Text>
+      </View>
+    )
+  }
+
+  // Use cardladder as primary if available, then ebay, then first with data
+  const primarySource =
+    sourcesWithHistory.find(p => p.source === 'cardladder') ??
+    sourcesWithHistory.find(p => p.source === 'ebay') ??
+    sourcesWithHistory[0]
+
+  const primaryFiltered = filterByRange(primarySource.history, range)
+  if (primaryFiltered.length < 2) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>Price History</Text>
+        <Text style={styles.emptyText}>No sales in the selected time range.</Text>
+      </View>
+    )
+  }
 
   // Downsample to at most 12 points for readability
-  const step = Math.max(1, Math.floor(filtered.length / 12))
-  const sampled = filtered.filter((_, i) => i % step === 0)
+  const step = Math.max(1, Math.floor(primaryFiltered.length / 12))
+  const sampled = primaryFiltered.filter((_, i) => i % step === 0)
 
   const labels = sampled.map((p) => {
     const d = new Date(p.date)
     return `${d.getMonth() + 1}/${d.getDate()}`
   })
 
-  // Build datasets for all three sources
-  const datasets = prices.map((src) => {
+  // Build datasets only for sources that have history in this range
+  const datasets = sourcesWithHistory.map((src) => {
     const srcFiltered = filterByRange(src.history, range)
     const srcSampled = srcFiltered.filter((_, i) => i % step === 0)
-    // Align length to primary
     const data = sampled.map((primary) => {
       const match = srcSampled.find((s) => s.date === primary.date)
       return match?.price ?? primary.price
@@ -84,9 +107,9 @@ export function PriceChart({ prices }: PriceChartProps) {
         </View>
       </View>
 
-      {/* Legend */}
+      {/* Legend — only sources with history */}
       <View style={styles.legend}>
-        {prices.map((src) => (
+        {sourcesWithHistory.map((src) => (
           <View key={src.source} style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: SOURCE_COLORS[src.source] }]} />
             <Text style={styles.legendLabel}>{src.source.toUpperCase()}</Text>
@@ -128,6 +151,26 @@ const styles = StyleSheet.create({
     gap: 12,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  emptyContainer: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   header: {
     flexDirection: 'row',

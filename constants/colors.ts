@@ -25,6 +25,7 @@ export const Colors = {
   alt: '#7B61FF',
   ebay: '#E53238',
   snkrdunk: '#FF6B35',
+  cardladder: '#16A34A',
 
   // Grading company colours
   psa: '#1B5E9A',
