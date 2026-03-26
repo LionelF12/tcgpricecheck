@@ -201,16 +201,16 @@ async function fetchAltPrices(
 //
 // Requires a free CardLadder account at https://app.cardladder.com
 
-const CL_FIREBASE_API_KEY = 'AIzaSyBqbxgaaGlpeb1F6HRvEW319OcuCsbkAHMZZ123123'
 const CL_SEARCH_BASE = 'https://search-zzvl7ri3bq-uc.a.run.app'
 
 async function getCardLadderToken(): Promise<string | null> {
   const email = Deno.env.get('CARDLADDER_EMAIL')
   const password = Deno.env.get('CARDLADDER_PASSWORD')
-  if (!email || !password) return null
+  const firebaseApiKey = Deno.env.get('CARDLADDER_FIREBASE_API_KEY')
+  if (!email || !password || !firebaseApiKey) return null
 
   const res = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${CL_FIREBASE_API_KEY}`,
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
